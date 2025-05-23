@@ -9,8 +9,10 @@ const EnrolledCourses = () => {
   const student = currentUser as Student;
   const { courses, removeStudentFromCourse } = useDataContext();
 
-  // Get enrolled courses
-  const enrolledCourses = courses.filter(course => student.courses.includes(course.id));
+  // Get enrolled courses with safety check for student.courses
+  const enrolledCourses = courses.filter(course => 
+    student?.courses && Array.isArray(student.courses) && student.courses.includes(course.id)
+  );
 
   const handleDrop = (courseId: string) => {
     if (confirm('Are you sure you want to drop this course?')) {
