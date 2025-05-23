@@ -9,8 +9,12 @@ const AvailableCourses = () => {
   const student = currentUser as Student;
   const { courses, enrollStudentInCourse, removeStudentFromCourse } = useDataContext();
 
-  // Filter out courses the student is already enrolled in
-  const availableCourses = courses.filter(course => !student.courses.includes(course.id));
+  // Filter out courses the student is already enrolled in, with proper type checking
+  const availableCourses = courses.filter(course => 
+    student?.courses && 
+    Array.isArray(student.courses) && 
+    !student.courses.includes(course.id)
+  );
 
   const handleEnroll = (courseId: string) => {
     enrollStudentInCourse(student.id, courseId);
