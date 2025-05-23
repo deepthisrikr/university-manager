@@ -1,13 +1,59 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useDataContext } from '../../context/DataContext';
-import { ArrowRight, ArrowLeft, Search } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Search, Upload } from 'lucide-react';
+import Papa from 'papaparse';
 
 const AssignStudents = () => {
-  const { courses, students, faculties } = useDataContext();
+  const { courses, students, faculties, addStudent } = useDataContext();
   const [selectedCourse, setSelectedCourse] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [assignedStudents, setAssignedStudents] = useState<{[courseId: string]: string[]}>({});
   const [assignedFaculty, setAssignedFaculty] = useState<{[courseId: string]: string[]}>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      Papa.parse(file, {
+        complete: (results) => {
+          const headers = results.data[0] as string[];
+          const rows = results.data.slice(1) as string[][];
+          
+          rows.forEach(row => {
+            if (row.length === headers.length) {
+              const studentData = {
+                id: `S${Math.floor(1000 + Math.random() * 9000)}`,
+                name: row[headers.indexOf('name')],
+                email: row[headers.indexOf('email')],
+                department: row[headers.indexOf('department')],
+                enrollmentYear: row[headers.indexOf('enrollmentYear')] || new Date().getFullYear().toString(),
+                semester: row[headers.indexOf('semester')] || '1',
+                phone: row[headers.indexOf('phone')],
+                password: 'password',
+                role: 'student',
+                courses: [],
+                attendanceRecords: [],
+                grades: [],
+              };
+              
+              if (studentData.name && studentData.email && studentData.department) {
+                addStudent(studentData);
+              }
+            }
+          });
+          
+          // Reset file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          
+          alert('Students imported successfully!');
+        },
+        header: true,
+        skipEmptyLines: true
+      });
+    }
+  };
 
   const filteredStudents = students.filter(student => 
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,7 +99,25 @@ const AssignStudents = () => {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Assign Students</h1>
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">Assign Students</h1>
+          <div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept=".csv"
+              onChange={handleFileUpload}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <Upload className="h-5 w-5 mr-1" />
+              Import Students (CSV)
+            </button>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
